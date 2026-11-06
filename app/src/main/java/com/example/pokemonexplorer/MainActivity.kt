@@ -49,10 +49,11 @@ class MainActivity : AppCompatActivity() {
                 val height = pokemon.getInt("height")
                 val weight = pokemon.getInt("weight")
 
-                pokemonName.text = name.replaceFirstChar { it.uppercase() }
-
-                pokemonInfo.text =
-                    "Height: $height\nWeight: $weight\nPokémon #$pokemonId"
+                runOnUiThread {
+                    pokemonName.text = name.replaceFirstChar { it.uppercase() }
+                    pokemonInfo.text =
+                        "Height: $height\nWeight: $weight\nPokémon #$pokemonId"
+                }
             }
 
             override fun onFailure(
@@ -61,7 +62,11 @@ class MainActivity : AppCompatActivity() {
                 response: String?,
                 throwable: Throwable?
             ) {
-                pokemonName.text = "Error loading Pokémon"
+                runOnUiThread {
+                    pokemonName.text = "Error: $statusCode"
+                    pokemonInfo.text =
+                        response ?: throwable?.message ?: "Unknown error"
+                }
             }
         })
     }
