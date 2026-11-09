@@ -1,9 +1,12 @@
+
 package com.example.pokemonexplorer
 
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.codepath.asynchttpclient.AsyncHttpClient
 import com.codepath.asynchttpclient.callback.JsonHttpResponseHandler
 import okhttp3.Headers
@@ -13,8 +16,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pokemonName: TextView
     private lateinit var pokemonInfo: TextView
     private lateinit var nextButton: Button
+    private lateinit var pokemonRecyclerView: RecyclerView
 
     private var pokemonId = 1
+
+    private val pokemonList = mutableListOf<Pokemon>()
+    private lateinit var pokemonAdapter: PokemonAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,6 +30,13 @@ class MainActivity : AppCompatActivity() {
         pokemonName = findViewById(R.id.pokemonName)
         pokemonInfo = findViewById(R.id.pokemonInfo)
         nextButton = findViewById(R.id.nextButton)
+        pokemonRecyclerView = findViewById(R.id.pokemonRecyclerView)
+
+        pokemonRecyclerView.layoutManager =
+            LinearLayoutManager(this)
+
+        pokemonAdapter = PokemonAdapter(pokemonList)
+        pokemonRecyclerView.adapter = pokemonAdapter
 
         getPokemon()
 
@@ -33,8 +47,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getPokemon() {
+
         val client = AsyncHttpClient()
-        val url = "https://pokeapi.co/api/v2/pokemon/$pokemonId"
+        val currentPokemonId = pokemonId
+
+        val url =
+            "https://pokeapi.co/api/v2/pokemon/$currentPokemonId"
 
         client.get(url, object : JsonHttpResponseHandler() {
 
@@ -43,6 +61,7 @@ class MainActivity : AppCompatActivity() {
                 headers: Headers?,
                 json: JSON
             ) {
+
                 val pokemon = json.jsonObject
 
                 val name = pokemon.getString("name")
@@ -50,9 +69,22 @@ class MainActivity : AppCompatActivity() {
                 val weight = pokemon.getInt("weight")
 
                 runOnUiThread {
-                    pokemonName.text = name.replaceFirstChar { it.uppercase() }
+
+                    val displayName =
+                        name.replaceFirstChar { it.uppercase() }
+
+                    pokemonName.text = displayName
+
                     pokemonInfo.text =
-                        "Height: $height\nWeight: $weight\nPokémon #$pokemonId"
+                        "Height: $height\nWeight: $weight\nPokémon #$currentPokemonId"
+
+                    pokemonList.add(
+                        Pokemon(displayName, height, weight)
+                    )
+
+                    pokemonAdapter.notifyItemInserted(
+                        pokemonList.size - 1
+                    )
                 }
             }
 
@@ -62,12 +94,18 @@ class MainActivity : AppCompatActivity() {
                 response: String?,
                 throwable: Throwable?
             ) {
+
                 runOnUiThread {
+
                     pokemonName.text = "Error: $statusCode"
+
                     pokemonInfo.text =
-                        response ?: throwable?.message ?: "Unknown error"
+                        response
+                            ?: throwable?.message
+                                    ?: "Unknown error"
                 }
             }
         })
     }
 }
+
